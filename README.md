@@ -3,6 +3,7 @@ Welcome to MakingSenseOfUniSens — your friendly MATLAB GUI tool to easily crop
 
 
 Features ✨
+
 Intuitive GUI to select your UniSens dataset folder
 
 Set start and end times in seconds for precise cropping
@@ -17,6 +18,7 @@ Real-time status updates and helpful error messages
 
 
 How to Use 🚀
+
 Run makingsenseofunisens in MATLAB to launch the GUI.
 
 Click Durchsuchen to select your UniSens input folder.
@@ -38,6 +40,7 @@ unisensCrop function accessible in your MATLAB path
 
 
 Notes 📝
+
 The tool looks for CSV files named nn_live.csv and bpmbxb_live.csv inside your input folder (semicolon-separated values).
 
 If CSV timestamps are in milliseconds, they’ll automatically be converted to seconds for accurate cropping.
