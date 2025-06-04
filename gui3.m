@@ -1,38 +1,38 @@
 function unisens_crop_gui
-    % Fügt Unisens-JAR zum Java-Pfad hinzu (wenn noch nicht geladen)
+    % Adding the unisens-JAR to the JAVA-Path 
     addUnisensJar();
 
-    % GUI-Fenster
+    % GUI
     fig = figure('Name', 'UniSens Crop Tool', 'Position', [300 300 520 320]);
 
-    % Eingabeordner
+    % input
     uicontrol('Style', 'text', 'Position', [20 270 150 20], 'String', 'UniSens Eingabeordner:');
     folderEdit = uicontrol('Style', 'edit', 'Position', [180 270 240 25]);
     uicontrol('Style', 'pushbutton', 'Position', [430 270 80 25], 'String', 'Durchsuchen', ...
               'Callback', @(src,event) selectFolder(folderEdit));
 
-    % Startzeit in Sekunden
+    % cut time beginning in seconds
     uicontrol('Style', 'text', 'Position', [20 220 150 20], 'String', 'Startzeit (Sekunden):');
     startEdit = uicontrol('Style', 'edit', 'Position', [180 220 100 25], 'String', '0');
 
-    % Endzeit in Sekunden
+    % cut time ending in seconds
     uicontrol('Style', 'text', 'Position', [20 180 150 20], 'String', 'Endzeit (Sekunden):');
     endEdit = uicontrol('Style', 'edit', 'Position', [180 180 100 25], 'String', '');
 
-    % Ausgabeordnername
+    % naming the output
     uicontrol('Style', 'text', 'Position', [20 140 150 20], 'String', 'Name Ausgabeordner:');
     outNameEdit = uicontrol('Style', 'edit', 'Position', [180 140 240 25]);
 
-    % Statusanzeige
+    % status
     statusText = uicontrol('Style', 'text', 'Position', [20 100 490 25], 'String', '');
 
     % Button
     uicontrol('Style', 'pushbutton', 'Position', [180 50 180 40], 'String', 'Dataset zuschneiden', ...
               'FontSize', 12, 'Callback', @cropCallback);
 
-    % --- Funktionen ---
+    % --- functions ---
     function addUnisensJar()
-        %ADDUNISENSJAR Fügt unisens.jar zum dynamischen Java-Pfad hinzu
+        %ADDUNISENSJAR 
         version = '2.3.0';
         unisensJar = ['Unisens-' version '.jar'];
         dPath = javaclasspath('-dynamic');
@@ -45,7 +45,7 @@ function unisens_crop_gui
         [currentPath, ~, ~] = fileparts(mfilename('fullpath'));
         jarFullPath = fullfile(currentPath, unisensJar);
         if ~exist(jarFullPath, 'file')
-            error(['Die Datei ' unisensJar ' wurde im Skriptordner nicht gefunden!']);
+            error(['File ' unisensJar ' could not be found in the folder!']);
         end
         javaaddpath(jarFullPath);
     end
@@ -66,38 +66,38 @@ function unisens_crop_gui
         endSec = str2double(get(endEdit, 'String'));
         outName = get(outNameEdit, 'String');
 
-        % Validierung
+        % validation
         if isempty(inFolder) || ~isfolder(inFolder)
-            errordlg('Bitte gültigen Eingabeordner angeben.', 'Fehler');
+            errordlg('please use a valid input folder', 'error');
             set(statusText, 'String', '');
             return;
         end
         if isnan(startSec) || isnan(endSec) || startSec < 0 || endSec <= startSec
-            errordlg('Bitte Start- und Endzeit korrekt eingeben (Endzeit > Startzeit).', 'Fehler');
+            errordlg('please indicate a correct beginning and ending time (end time > beginning).', 'error');
             set(statusText, 'String', '');
             return;
         end
         if isempty(outName)
-            errordlg('Bitte einen Namen für den Ausgabeordner eingeben.', 'Fehler');
+            errordlg('Please choose a name for your output folder.', 'error');
             set(statusText, 'String', '');
             return;
         end
 
-        % Ausgabeordner
+        % output
         parentPath = fileparts(inFolder);
         outFolder = fullfile(parentPath, outName);
 
         if exist(outFolder, 'dir')
-            choice = questdlg('Ausgabeordner existiert bereits. Überschreiben?', 'Ordner existiert', 'Ja', 'Nein', 'Nein');
-            if ~strcmp(choice, 'Ja')
-                set(statusText, 'String', 'Abgebrochen.');
+            choice = questdlg('This ouput folder already exists. Should the original one be replaced?', 'Folder exists', 'Yes', 'No', 'No');
+            if ~strcmp(choice, 'Yes')
+                set(statusText, 'String', 'canceled.');
                 return;
             else
                 rmdir(outFolder, 's');
             end
         end
 
-        % Abtastrate ermitteln
+        % determination of sampling rate
         try
             j_unisensFactory = org.unisens.UnisensFactoryBuilder.createFactory();
             j_unisens = j_unisensFactory.createUnisens(inFolder);
@@ -117,12 +117,12 @@ function unisens_crop_gui
             end
             j_unisens.closeAll();
         catch ME
-            errordlg(['Fehler beim Lesen der Abtastrate: ' ME.message], 'Fehler');
+            errordlg(['error in reading the sampling rate: ' ME.message], 'error');
             set(statusText, 'String', '');
             return;
         end
 
-        % Zeiten in Samples umrechnen
+        % calculating sample timings
         start_sample = floor(startSec * crop_samplerate);
         end_sample = ceil(endSec * crop_samplerate);
 
