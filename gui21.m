@@ -1,0 +1,243 @@
+function unisens_crop_gui
+    % Fügt Unisens-JAR zum Java-Pfad hinzu (wenn noch nicht geladen)
+    addUnisensJar();
+
+    % GUI-Fenster
+    fig = figure('Name', 'UniSens Crop Tool', 'Position', [300 300 550 420]);
+
+    % Eingabeordner
+    uicontrol('Style', 'text', 'Position', [20 370 150 20], 'String', 'UniSens Eingabeordner:');
+    folderEdit = uicontrol('Style', 'edit', 'Position', [180 370 240 25]);
+    uicontrol('Style', 'pushbutton', 'Position', [430 370 80 25], 'String', 'Durchsuchen', ...
+              'Callback', @(src,event) selectFolder(folderEdit));
+
+    % Uhrzeit Start
+    uicontrol('Style', 'text', 'Position', [20 330 150 20], 'String', 'Startzeit (HH:MM:SS(.SSS)):');
+    startTimeEdit = uicontrol('Style', 'edit', 'Position', [180 330 100 25], 'String', '');
+
+    % Uhrzeit Ende
+    uicontrol('Style', 'text', 'Position', [20 290 150 20], 'String', 'Endzeit (HH:MM:SS(.SSS)):');
+    endTimeEdit = uicontrol('Style', 'edit', 'Position', [180 290 100 25], 'String', '');
+
+    % Umrechnen-Button
+    uicontrol('Style', 'pushbutton', 'Position', [300 310 180 30], ...
+              'String', 'Uhrzeiten umrechnen', ...
+              'Callback', @convertTimesCallback);
+
+    % Startzeit in Sekunden
+    uicontrol('Style', 'text', 'Position', [20 240 150 20], 'String', 'Startzeit (Sekunden):');
+    startEdit = uicontrol('Style', 'edit', 'Position', [180 240 100 25], 'String', '0');
+
+    % Endzeit in Sekunden
+    uicontrol('Style', 'text', 'Position', [20 200 150 20], 'String', 'Endzeit (Sekunden):');
+    endEdit = uicontrol('Style', 'edit', 'Position', [180 200 100 25], 'String', '');
+
+    % Ausgabeordnername
+    uicontrol('Style', 'text', 'Position', [20 160 150 20], 'String', 'Name Ausgabeordner:');
+    outNameEdit = uicontrol('Style', 'edit', 'Position', [180 160 240 25]);
+
+    % Statusanzeige
+    statusText = uicontrol('Style', 'text', 'Position', [20 120 490 25], 'String', '');
+
+    % Button
+    uicontrol('Style', 'pushbutton', 'Position', [180 60 180 40], 'String', 'Dataset zuschneiden', ...
+              'FontSize', 12, 'Callback', @cropCallback);
+
+    % --- Funktionen ---
+    function addUnisensJar()
+        version = '2.3.0';
+        unisensJar = ['Unisens-' version '.jar'];
+        dPath = javaclasspath('-dynamic');
+        for i = 1:length(dPath)
+            [~, name, ext] = fileparts(dPath{i});
+            if strcmp([name ext], unisensJar)
+                return;
+            end
+        end
+        [currentPath, ~, ~] = fileparts(mfilename('fullpath'));
+        jarFullPath = fullfile(currentPath, unisensJar);
+        if ~exist(jarFullPath, 'file')
+            error(['Die Datei ' unisensJar ' wurde im Skriptordner nicht gefunden!']);
+        end
+        javaaddpath(jarFullPath);
+    end
+
+    function selectFolder(editHandle)
+        folder = uigetdir;
+        if folder ~= 0
+            set(editHandle, 'String', folder);
+        end
+    end
+
+    function convertTimesCallback(~, ~)
+        startTimeStr = strtrim(get(startTimeEdit, 'String'));
+        endTimeStr = strtrim(get(endTimeEdit, 'String'));
+        inFolder = get(folderEdit, 'String');
+
+        if isempty(startTimeStr) || isempty(endTimeStr)
+            errordlg('Bitte beide Uhrzeiten eingeben.', 'Fehler');
+            return;
+        end
+        if isempty(inFolder) || ~isfolder(inFolder)
+            errordlg('Bitte gültigen Eingabeordner angeben.', 'Fehler');
+            return;
+        end
+
+        try
+            fileStartTimeStr = getFileStartTime(inFolder);
+            startSec = convertUhrzeitToSeconds(startTimeStr, fileStartTimeStr);
+            endSec = convertUhrzeitToSeconds(endTimeStr, fileStartTimeStr);
+
+            if startSec < 0 || endSec <= startSec
+                errordlg('Ungültige Uhrzeiten (Endzeit <= Startzeit oder < Aufnahmebeginn).', 'Fehler');
+                return;
+            end
+
+            set(startEdit, 'String', num2str(startSec));
+            set(endEdit, 'String', num2str(endSec));
+            set(statusText, 'String', 'Uhrzeiten erfolgreich umgerechnet.');
+        catch ME
+            errordlg(['Fehler bei der Umrechnung: ' ME.message], 'Fehler');
+        end
+    end
+
+    function fileStartTimeStr = getFileStartTime(inFolder)
+        xmlFile = fullfile(inFolder, 'unisens.xml');
+        if ~exist(xmlFile, 'file')
+            error('unisens.xml Datei im Eingabeordner nicht gefunden.');
+        end
+
+        try
+            xDoc = xmlread(xmlFile);
+            root = xDoc.getDocumentElement;
+            attr = root.getAttribute('timestampStart');
+            if isempty(char(attr))
+                error('timestampStart Attribut nicht gefunden.');
+            end
+            fileStartTimeStr = char(attr);
+        catch
+            error('Fehler beim Lesen von unisens.xml.');
+        end
+    end
+
+    function secondsOffset = convertUhrzeitToSeconds(uhrzeitStr, fileStartTimeStr)
+        fileStart = datetime(fileStartTimeStr, 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss.SSS');
+
+        try
+            if contains(uhrzeitStr, '.')
+                uhrzeit = datetime(uhrzeitStr, 'InputFormat', 'HH:mm:ss.SSS');
+            else
+                uhrzeit = datetime([uhrzeitStr '.000'], 'InputFormat', 'HH:mm:ss.SSS');
+            end
+        catch
+            error('Ungültiges Zeitformat. Bitte HH:MM:SS oder HH:MM:SS.SSS verwenden.');
+        end
+
+        uhrzeitDuration = hours(hour(uhrzeit)) + minutes(minute(uhrzeit)) + seconds(second(uhrzeit));
+        fileStartDate = datetime(year(fileStart), month(fileStart), day(fileStart));
+        targetTime = fileStartDate + uhrzeitDuration;
+        secondsOffset = seconds(targetTime - fileStart);
+    end
+
+    function cropCallback(~, ~)
+        set(statusText, 'String', 'Arbeite...');
+        drawnow;
+
+        inFolder = get(folderEdit, 'String');
+        startSec = str2double(get(startEdit, 'String'));
+        endSec = str2double(get(endEdit, 'String'));
+        outName = get(outNameEdit, 'String');
+
+        if isempty(inFolder) || ~isfolder(inFolder)
+            errordlg('Bitte gültigen Eingabeordner angeben.', 'Fehler');
+            set(statusText, 'String', '');
+            return;
+        end
+        if isnan(startSec) || isnan(endSec) || startSec < 0 || endSec <= startSec
+            errordlg('Bitte Start- und Endzeit korrekt eingeben (Endzeit > Startzeit).', 'Fehler');
+            set(statusText, 'String', '');
+            return;
+        end
+        if isempty(outName)
+            errordlg('Bitte einen Namen für den Ausgabeordner eingeben.', 'Fehler');
+            set(statusText, 'String', '');
+            return;
+        end
+
+        parentPath = fileparts(inFolder);
+        outFolder = fullfile(parentPath, outName);
+
+        if exist(outFolder, 'dir')
+            choice = questdlg('Ausgabeordner existiert bereits. Überschreiben?', ...
+                              'Ordner existiert', 'Ja', 'Nein', 'Nein');
+            if ~strcmp(choice, 'Ja')
+                set(statusText, 'String', 'Abgebrochen.');
+                return;
+            else
+                rmdir(outFolder, 's');
+            end
+        end
+
+        try
+            j_unisensFactory = org.unisens.UnisensFactoryBuilder.createFactory();
+            j_unisens = j_unisensFactory.createUnisens(inFolder);
+            j_entries = j_unisens.getEntries();
+            crop_samplerate = [];
+            for i = 0:j_entries.size()-1
+                j_entry = j_entries.get(i);
+                entry_class_name = char(j_entry.getClass.toString);
+                if strcmp(entry_class_name, 'class org.unisens.ri.SignalEntryImpl')
+                    crop_samplerate = j_entry.getSampleRate();
+                    break;
+                end
+            end
+            if isempty(crop_samplerate)
+                error('Keine SignalEntry mit Abtastrate gefunden.');
+            end
+            j_unisens.closeAll();
+        catch ME
+            errordlg(['Fehler beim Lesen der Abtastrate: ' ME.message], 'Fehler');
+            set(statusText, 'String', '');
+            return;
+        end
+
+        start_sample = floor(startSec * crop_samplerate);
+        end_sample = ceil(endSec * crop_samplerate);
+
+        try
+            if ~exist(outFolder, 'dir')
+                mkdir(outFolder);
+            end
+
+            unisensCrop(inFolder, outFolder, crop_samplerate, start_sample, end_sample);
+
+            % --- CSV Dateien zuschneiden ---
+            csvFiles = {'nn_live.csv', 'bpmbxb_live.csv'};
+            for i = 1:length(csvFiles)
+                csvFile = fullfile(inFolder, csvFiles{i});
+                if ~exist(csvFile, 'file')
+                    fprintf('⚠️ CSV-Datei nicht gefunden: %s\n', csvFile);
+                    continue;
+                end
+                data = readtable(csvFile, 'Delimiter', ';');
+                timeColumn = data{:,1};
+                if max(timeColumn) > 1e6
+                    timeColumn = timeColumn / 1000;
+                end
+                mask = timeColumn >= startSec & timeColumn <= endSec;
+                cutData = data(mask,:);
+                if isempty(cutData)
+                    fprintf('⚠️ Keine Daten im Zeitbereich für Datei: %s\n', csvFiles{i});
+                    continue;
+                end
+                writetable(cutData, fullfile(outFolder, csvFiles{i}), 'Delimiter', ';');
+                fprintf('✔️ %s erfolgreich zugeschnitten.\n', csvFiles{i});
+            end
+
+            set(statusText, 'String', ['Erfolg! Daten gespeichert in: ' outFolder]);
+        catch ME
+            errordlg(['Fehler beim Zuschneiden: ' ME.message], 'Fehler');
+            set(statusText, 'String', '');
+        end
+    end
+end
