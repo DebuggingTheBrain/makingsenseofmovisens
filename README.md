@@ -1,65 +1,77 @@
 # MakingSenseOfUniSens 🎛️✂️
-# für Hermine 
-Welcome to MakingSenseOfUniSens — your friendly MATLAB GUI tool to easily crop UniSens datasets by specifying start and end times! Perfect for trimming down large sensor data collections and their linked CSV files, all without hassle.
 
+### Für Hermine ✨
 
-##Features ✨
+**MakingSenseOfUniSens** ist ein benutzerfreundliches MATLAB-GUI-Tool zum Zuschneiden von UniSens-Datensätzen. Lege einfach eine Start- und Endzeit fest – das Tool kürzt automatisch die zugehörigen Signaldaten und CSV-Dateien.
 
-Intuitive GUI to select your UniSens dataset folder
+## Features ✨
 
-Set start and end times in seconds for precise cropping
+* Intuitive Benutzeroberfläche zur Auswahl des UniSens-Datensatzes
+* Präzise Eingabe von Start- und Endzeit in Sekunden
+* Automatische Erkennung der Abtastrate
+* Zuschneiden der UniSens-Signale auf das gewünschte Zeitfenster
+* Automatische Verarbeitung der zugehörigen CSV-Dateien:
 
-Automatically detects the dataset's sampling rate
+  * `nn_live.csv`
+  * `bpmbxb_live.csv`
+* Speicherung des zugeschnittenen Datensatzes in einem neuen Ausgabeordner
+* Statusmeldungen und verständliche Fehlermeldungen direkt in der GUI
 
-Crops UniSens signals and associated CSV files (nn_live.csv, bpmbxb_live.csv) within your specified time window
+## Verwendung 🚀
 
-Creates a new output folder with your trimmed dataset
+1. Starte das Tool in MATLAB:
 
-Real-time status updates and helpful error messages
+   ```matlab
+   makingsenseofunisens
+   ```
 
+2. Klicke auf **Durchsuchen** und wähle den Ordner mit deinem UniSens-Datensatz aus.
 
-##How to Use 🚀
+3. Gib unter **Startzeit** und **Endzeit** das gewünschte Zeitfenster in Sekunden ein.
 
-Run makingsenseofunisens in MATLAB to launch the GUI.
+4. Trage unter **Name Ausgabeordner** einen Namen für den neuen Datensatz ein.
 
-Click Durchsuchen to select your UniSens input folder.
+5. Klicke auf **Dataset zuschneiden**.
 
-Enter the Startzeit and Endzeit (in seconds) to define your crop interval.
+Der zugeschnittene UniSens-Datensatz sowie die bearbeiteten CSV-Dateien werden anschließend im neuen Ausgabeordner gespeichert.
 
-Provide a name for your output folder in Name Ausgabeordner.
+## Voraussetzungen 📦
 
-Click Dataset zuschneiden and watch the magic happen! Your cropped dataset and CSV files will be saved to the output folder.
+Für die Verwendung benötigst du:
 
-##Requirements 📦
-MATLAB with Java support enabled
+* MATLAB mit aktivierter Java-Unterstützung
+* die Datei `Unisens-2.3.0.jar` im selben Ordner wie das MATLAB-Skript
+* einen gültigen UniSens-Datensatz
+* die Funktion `unisensCrop` im MATLAB-Pfad
 
-Unisens-2.3.0.jar placed in the same directory as the script
+## Hinweise 📝
 
-Your UniSens dataset folder ready to crop
+* Das Tool sucht im ausgewählten Eingabeordner automatisch nach den Dateien `nn_live.csv` und `bpmbxb_live.csv`.
+* Die CSV-Dateien müssen mit Semikolons getrennt sein.
+* Zeitstempel in Millisekunden werden automatisch erkannt und für das Zuschneiden in Sekunden umgerechnet.
+* Falls der gewünschte Ausgabeordner bereits existiert, fragt das Tool, ob dieser überschrieben werden soll.
 
-unisensCrop function accessible in your MATLAB path
+## Fehlerbehebung ⚠️
 
+### Die JAR-Datei wird nicht gefunden
 
-##Notes 📝
+Stelle sicher, dass sich `Unisens-2.3.0.jar` im selben Ordner wie das MATLAB-Skript befindet.
 
-The tool looks for CSV files named nn_live.csv and bpmbxb_live.csv inside your input folder (semicolon-separated values).
+### Die Abtastrate kann nicht erkannt werden
 
-If CSV timestamps are in milliseconds, they’ll automatically be converted to seconds for accurate cropping.
+Überprüfe, ob der UniSens-Datensatz gültige Signaleinträge und Informationen zur Abtastrate enthält.
 
-If the output folder already exists, you'll be asked if you want to overwrite it.
+### Die CSV-Dateien werden nicht verarbeitet
 
+Überprüfe, ob:
 
-##Troubleshooting ⚠️
-Missing JAR file? Ensure Unisens-2.3.0.jar is in the same folder as this script.
+* die Dateien `nn_live.csv` und `bpmbxb_live.csv` im Eingabeordner vorhanden sind,
+* die Werte durch Semikolons getrennt sind,
+* die Dateien gültige Zeitstempel enthalten und
+* innerhalb des gewählten Zeitfensters Daten vorhanden sind.
 
-Sampling rate errors? Make sure your UniSens dataset includes valid signal entries.
+## Lizenz
 
-CSV file issues? Verify the CSV files exist and contain timestamps within your chosen interval.
+Dieses Projekt steht unter der [MIT-Lizenz](LICENSE).
 
-
-## License
-
-This project is licensed under the MIT License — see the LICENSE file for details. Please credit me as the author if you use this tool.
-
-
-
+Wenn du das Tool verwendest oder weiterentwickelst, freue ich mich über eine Nennung als Autorin.
