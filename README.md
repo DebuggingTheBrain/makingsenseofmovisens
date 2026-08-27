@@ -3,7 +3,7 @@
 Welcome to MakingSenseOfUniSens — your friendly MATLAB GUI tool to easily crop UniSens datasets by specifying start and end times! Perfect for trimming down large sensor data collections and their linked CSV files, all without hassle.
 
 
-Features ✨
+##Features ✨
 
 Intuitive GUI to select your UniSens dataset folder
 
@@ -18,7 +18,7 @@ Creates a new output folder with your trimmed dataset
 Real-time status updates and helpful error messages
 
 
-How to Use 🚀
+##How to Use 🚀
 
 Run makingsenseofunisens in MATLAB to launch the GUI.
 
@@ -30,7 +30,7 @@ Provide a name for your output folder in Name Ausgabeordner.
 
 Click Dataset zuschneiden and watch the magic happen! Your cropped dataset and CSV files will be saved to the output folder.
 
-Requirements 📦
+##Requirements 📦
 MATLAB with Java support enabled
 
 Unisens-2.3.0.jar placed in the same directory as the script
@@ -40,7 +40,7 @@ Your UniSens dataset folder ready to crop
 unisensCrop function accessible in your MATLAB path
 
 
-Notes 📝
+##Notes 📝
 
 The tool looks for CSV files named nn_live.csv and bpmbxb_live.csv inside your input folder (semicolon-separated values).
 
@@ -49,7 +49,7 @@ If CSV timestamps are in milliseconds, they’ll automatically be converted to s
 If the output folder already exists, you'll be asked if you want to overwrite it.
 
 
-Troubleshooting ⚠️
+##Troubleshooting ⚠️
 Missing JAR file? Ensure Unisens-2.3.0.jar is in the same folder as this script.
 
 Sampling rate errors? Make sure your UniSens dataset includes valid signal entries.
